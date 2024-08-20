@@ -1,0 +1,65 @@
+﻿@page "/"
+@inject UserService UserService
+@inject NavigationManager NavManager
+@using Blazr.EditStateTracker.Components
+@using Blazr.EditStateTracker
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<EditForm EditContext="_editContext" OnValidSubmit="this.OnValidSubmitAsync">
+    <BlazrEditStateTracker />
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <InputText class="form-control" @bind-Value="_model.AvatarName" />
+    </div>
+    <div class="mb-3">
+        <button disabled="@_isClean" type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</EditForm>
+
+<NavigationLock ConfirmExternalNavigation="_isDirty" OnBeforeInternalNavigation="this.OnLocationChanging" />
+@code {
+    private User _model = new();
+    private EditContext? _editContext;
+    private BlazrEditStateStore? _editStateStore => _editContext?.GetStateStore();
+    private bool _isDirty => _editStateStore?.IsDirty() ?? false;
+    private bool _isClean => !_isDirty;
+    private IDisposable? _disposeMe;
+
+    protected override void OnInitialized()
+    {
+        // Sets up the Edit Context
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (_isDirty)
+        {
+            // needed to let UI update and NavigationLock ConfirmExternalNavigation to update
+            await Task.Delay(100);
+            //Save
+            this.UserService.ChangeAvatar(this, _model.AvatarName);
+
+            //reset the store state
+            _editStateStore?.Reset();
+
+            NavManager.NavigateTo("/Counter");
+        }
+    }
+
+    private void OnLocationChanging(LocationChangingContext context)
+    {
+        // Prevent navigation if the edit context is dirty
+        if (_isDirty)
+            context.PreventNavigation();
+    }
+
+    public class User
+    {
+        [TrackState] public string? AvatarName { get; set; }
+    }
+}

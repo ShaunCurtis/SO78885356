@@ -1,0 +1,23 @@
+﻿@inject UserService UserService
+@implements IDisposable
+
+<button disabled class="btn btn-sm btn-secondary">
+    @(this.UserService.AvatarName ?? "No Avatar")
+</button>
+
+@code {
+    protected override void OnInitialized()
+    {
+        this.UserService.AvatarChanged += this.OnAvatarChanged;
+    }
+
+    public void OnAvatarChanged(object? sender, EventArgs e)
+    {
+        this.InvokeAsync(this.StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        this.UserService.AvatarChanged -= this.OnAvatarChanged;
+    }
+}
